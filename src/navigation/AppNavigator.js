@@ -1,12 +1,14 @@
 // navigation/AppNavigator.js
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+
 import LandingScreen from '../screens/LandingScreen';
 import LoginScreen from '../features/auth/screens/LoginScreen';
 import SignupScreen from '../features/auth/screens/SignupScreen';
-import { useAuth } from '../context/AuthContext';
 import HomeScreen from '../screens/HomeScreen';
+import ProfileSetupScreen from '../features/profile/screens/ProfileSetupScreen';
 
+import { useAuth } from '../context/AuthContext';
 
 const Stack = createNativeStackNavigator();
 
@@ -21,25 +23,32 @@ function AuthStack() {
 }
 
 function AppStack() {
-    return (
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="Home" component={HomeScreen} />
-      </Stack.Navigator>
-    );
-  }
+  const { profile, loading } = useAuth();
 
-function Placeholder() {
-  return <Text style={{ marginTop: 100, textAlign: 'center' }}>You're logged in! 🎉</Text>;
+  // 🚨 Don't render stack until profile is loaded
+  if (loading || profile === null) return null;
+
+  const initialRoute = profile ? 'Home' : 'ProfileSetup';
+
+  console.log('📍 final route:', initialRoute);
+
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }} initialRouteName={initialRoute}>
+      <Stack.Screen name="Home" component={HomeScreen} />
+      <Stack.Screen name="ProfileSetup" component={ProfileSetupScreen} />
+    </Stack.Navigator>
+  );
 }
+
 
 export default function AppNavigator() {
   const { user, loading } = useAuth();
 
-  if (loading) return null; // Show splash/loading screen later
+  if (loading) return null;
 
   return (
     <NavigationContainer>
-      {user ? <AppStack /> : <AuthStack />}
+      {!user ? <AuthStack /> : <AppStack />}
     </NavigationContainer>
   );
 }

@@ -16,16 +16,17 @@ export default function SignupScreen({ navigation }) {
     if (password !== confirm) {
       return Alert.alert('Passwords do not match');
     }
-
+  
     try {
       await createUserWithEmailAndPassword(auth, email, password);
       console.log('✅ Account created!');
-      // Navigation happens automatically with auth listener
+      navigation.replace('ProfileSetup'); // <—— NAVIGATES DIRECTLY AFTER SIGNUP
     } catch (error) {
       console.log('❌ Signup Error:', error.message);
       Alert.alert('Signup Error', error.message);
     }
   };
+  
 
   return (
     <View style={styles.container}>
