@@ -28,7 +28,7 @@ export default function ProfileSetupScreen({ navigation }) {
       const refreshed = await refreshProfile();
       console.log('🔄 Profile after refresh:', refreshed);
   
-      navigation.replace('Home');
+      navigation.replace('ExtrasIntro');
     } catch (e) {
       console.error('❌ Error saving profile:', e);
     }
