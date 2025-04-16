@@ -17,8 +17,11 @@ export function AuthProvider({ children }) {
     const docSnap = await getDoc(docRef);
     console.log('📄 Firestore doc exists:', docSnap.exists());
     console.log('📄 Firestore doc data:', docSnap.data());
+    const profileData = docSnap.exists() ? docSnap.data() : null;
+    console.log('🧠 fetchUserProfile:', profileData);
+    setProfile(profileData);
   
-    setProfile(docSnap.exists() ? docSnap.data() : null);
+    return profileData;
   };
   
 
@@ -39,7 +42,12 @@ export function AuthProvider({ children }) {
   
 
   return (
-    <AuthContext.Provider value={{ user, profile, loading, refreshProfile: () => fetchUserProfile(user?.uid) }}>
+    <AuthContext.Provider value={{
+      user,
+      profile,
+      loading,
+      refreshProfile: () => fetchUserProfile(user?.uid)
+    }}>
       {children}
     </AuthContext.Provider>
   );

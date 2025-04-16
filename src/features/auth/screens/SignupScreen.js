@@ -20,7 +20,6 @@ export default function SignupScreen({ navigation }) {
     try {
       await createUserWithEmailAndPassword(auth, email, password);
       console.log('✅ Account created!');
-      navigation.replace('ProfileSetup'); // <—— NAVIGATES DIRECTLY AFTER SIGNUP
     } catch (error) {
       console.log('❌ Signup Error:', error.message);
       Alert.alert('Signup Error', error.message);

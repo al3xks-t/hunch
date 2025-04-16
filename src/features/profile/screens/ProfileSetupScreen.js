@@ -1,14 +1,13 @@
 import { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Platform } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, ScrollView } from 'react-native';
 import PromptPickerScreen from './PromptPickerScreen';
-import DateTimePicker from '@react-native-community/datetimepicker';
 import * as Location from 'expo-location';
 import { auth, db } from '../../../config/firebase';
 import { doc, setDoc } from 'firebase/firestore';
 import * as ImagePicker from 'expo-image-picker';
-import { Image } from 'react-native';
 import { CommonActions } from '@react-navigation/native';
 import { useAuth } from '../../../context/AuthContext';
+import { Picker } from '@react-native-picker/picker';
 
 export default function ProfileSetupScreen({ navigation }) {
   const [step, setStep] = useState(0);
@@ -24,11 +23,14 @@ export default function ProfileSetupScreen({ navigation }) {
     const fullProfile = { ...profileData, prompts: promptAnswers };
     try {
       await setDoc(doc(db, 'users', auth.currentUser.uid), fullProfile);
-      
-      await refreshProfile();
-      navigation.replace('Home'); // 👈 simple and clean now
+      console.log('✅ Profile written to Firestore');
+  
+      const refreshed = await refreshProfile();
+      console.log('🔄 Profile after refresh:', refreshed);
+  
+      navigation.replace('Home');
     } catch (e) {
-      console.error('Error saving profile:', e);
+      console.error('❌ Error saving profile:', e);
     }
   };
   
@@ -67,27 +69,24 @@ function NameStep({ onNext }) {
 }
 
 function BirthdayStep({ onNext }) {
-  const [date, setDate] = useState(new Date());
-  const [show, setShow] = useState(false);
+  const [month, setMonth] = useState('January');
+  const [day, setDay] = useState('1');
+  const [year, setYear] = useState('2000');
+
+  const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+  const days = Array.from({ length: 31 }, (_, i) => (i + 1).toString());
+  const years = Array.from({ length: 80 }, (_, i) => (2025 - i).toString());
+
   return (
     <View>
       <Text style={styles.label}>When's your birthday?</Text>
-      <TouchableOpacity style={styles.input} onPress={() => setShow(true)}>
-        <Text>{date.toDateString()}</Text>
-      </TouchableOpacity>
-      {show && (
-        <DateTimePicker
-          value={date}
-          mode="date"
-          display="default"
-          maximumDate={new Date()}
-          onChange={(e, selectedDate) => {
-            setShow(Platform.OS === 'ios');
-            if (selectedDate) setDate(selectedDate);
-          }}
-        />
-      )}
-      <TouchableOpacity style={styles.button} onPress={() => onNext(date.toISOString())}>
+      <Text style={{ marginBottom: 8 }}>Month</Text>
+      <Picker selectedValue={month} onValueChange={setMonth}>{months.map((m, i) => <Picker.Item label={m} value={m} key={i} />)}</Picker>
+      <Text style={{ marginBottom: 8 }}>Day</Text>
+      <Picker selectedValue={day} onValueChange={setDay}>{days.map((d, i) => <Picker.Item label={d} value={d} key={i} />)}</Picker>
+      <Text style={{ marginBottom: 8 }}>Year</Text>
+      <Picker selectedValue={year} onValueChange={setYear}>{years.map((y, i) => <Picker.Item label={y} value={y} key={i} />)}</Picker>
+      <TouchableOpacity style={styles.button} onPress={() => onNext(`${month} ${day}, ${year}`)}>
         <Text style={styles.buttonText}>Next</Text>
       </TouchableOpacity>
     </View>
@@ -96,10 +95,13 @@ function BirthdayStep({ onNext }) {
 
 function GenderStep({ onNext }) {
   const [gender, setGender] = useState('');
+  const options = ['Male', 'Female', 'Prefer not to say'];
   return (
     <View>
-      <Text style={styles.label}>What’s your gender?</Text>
-      <TextInput style={styles.input} placeholder="Enter gender" onChangeText={setGender} value={gender} />
+      <Text style={styles.label}>What's your gender?</Text>
+      <Picker selectedValue={gender} onValueChange={setGender}>
+        {options.map((opt, i) => <Picker.Item label={opt} value={opt} key={i} />)}
+      </Picker>
       <TouchableOpacity style={styles.button} onPress={() => onNext(gender)}>
         <Text style={styles.buttonText}>Next</Text>
       </TouchableOpacity>
@@ -109,10 +111,13 @@ function GenderStep({ onNext }) {
 
 function PronounsStep({ onNext }) {
   const [pronouns, setPronouns] = useState('');
+  const options = ['They/Them', 'She/Her', 'He/Him', 'Other'];
   return (
     <View>
       <Text style={styles.label}>What are your pronouns?</Text>
-      <TextInput style={styles.input} placeholder="e.g. they/them" onChangeText={setPronouns} value={pronouns} />
+      <Picker selectedValue={pronouns} onValueChange={setPronouns}>
+        {options.map((opt, i) => <Picker.Item label={opt} value={opt} key={i} />)}
+      </Picker>
       <TouchableOpacity style={styles.button} onPress={() => onNext(pronouns)}>
         <Text style={styles.buttonText}>Next</Text>
       </TouchableOpacity>
@@ -122,21 +127,23 @@ function PronounsStep({ onNext }) {
 
 function LocationStep({ onNext }) {
   const [location, setLocation] = useState('');
+
   const fetchLocation = async () => {
     let { status } = await Location.requestForegroundPermissionsAsync();
     if (status !== 'granted') {
       return alert('Permission to access location was denied');
     }
     let loc = await Location.getCurrentPositionAsync({});
-    const city = `Lat: ${loc.coords.latitude.toFixed(2)}, Long: ${loc.coords.longitude.toFixed(2)}`;
-    setLocation(city);
+    let geocode = await Location.reverseGeocodeAsync(loc.coords);
+    const cityRegion = `${geocode[0].city}, ${geocode[0].region}`;
+    setLocation(cityRegion);
   };
 
   return (
     <View>
       <Text style={styles.label}>Where are you located?</Text>
       <TouchableOpacity style={styles.input} onPress={fetchLocation}>
-        <Text>{location || 'Tap to get your location'}</Text>
+        <Text>{location || 'Tap to detect city'}</Text>
       </TouchableOpacity>
       <TouchableOpacity style={styles.button} onPress={() => onNext(location)}>
         <Text style={styles.buttonText}>Next</Text>
