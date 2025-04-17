@@ -15,6 +15,9 @@ import ProfileSetupScreen from '../features/profile/screens/ProfileSetupScreen';
 import ExtrasIntroScreen from '../features/profile/screens/ExtrasIntroScreen';
 import ExtrasSetupScreen from '../features/profile/screens/ExtrasSetupScreen';
 import BottomTabNavigator from './BottomTabNavigator';
+import EditProfileScreen from '../features/profile/screens/EditProfileScreen';
+
+
 
   
 
@@ -80,6 +83,7 @@ function AppStack() {
       <Stack.Screen name="ProfileSetup" component={ProfileSetupScreen} />
       <Stack.Screen name="ExtrasIntro" component={ExtrasIntroScreen} />
       <Stack.Screen name="OptionalExtras" component={ExtrasSetupScreen} />
+      <Stack.Screen name="EditProfile" component={EditProfileScreen} />
     </Stack.Navigator>
   );
 }

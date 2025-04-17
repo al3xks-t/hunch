@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, ScrollView } from 'react-native';
-import PromptPickerScreen from './PromptPickerScreen';
 import * as Location from 'expo-location';
 import { auth, db } from '../../../config/firebase';
 import { doc, setDoc } from 'firebase/firestore';
@@ -19,20 +18,20 @@ export default function ProfileSetupScreen({ navigation }) {
     setStep(prev => prev + 1);
   };
 
-  const handlePromptSubmit = async (promptAnswers) => {
-    const fullProfile = { ...profileData, prompts: promptAnswers };
+  const handleSubmitProfile = async (bio) => {
+    const fullProfile = { ...profileData, bio }; // ✅ merge directly
     try {
       await setDoc(doc(db, 'users', auth.currentUser.uid), fullProfile);
-      console.log('✅ Profile written to Firestore');
+      console.log('✅ Profile written to Firestore:', fullProfile);
   
-      const refreshed = await refreshProfile();
-      console.log('🔄 Profile after refresh:', refreshed);
-  
+      await refreshProfile();
       navigation.replace('ExtrasIntro');
     } catch (e) {
       console.error('❌ Error saving profile:', e);
     }
   };
+  
+  
   
 
   const steps = [
@@ -42,7 +41,8 @@ export default function ProfileSetupScreen({ navigation }) {
     <PronounsStep onNext={(pronouns) => handleNext('pronouns', pronouns)} />,
     <LocationStep onNext={(location) => handleNext('location', location)} />,
     <PhotoStep onNext={(photoURL) => handleNext('photoURL', photoURL)} />,
-    <PromptPickerScreen onSubmit={handlePromptSubmit} />
+    <BioStep onSubmit={(bio) => handleSubmitProfile(bio)} />,
+    
   ];
 
   return (
@@ -217,6 +217,34 @@ function PhotoStep({ onNext }) {
   );
 }
 
+function BioStep({ onSubmit }) {
+  const [bio, setBio] = useState('');
+  const maxLength = 160;
+
+  return (
+    <View>
+      <Text style={styles.label}>Write a one-line bio</Text>
+      <TextInput
+        style={styles.input}
+        placeholder="Tell us something interesting about you"
+        multiline
+        maxLength={maxLength}
+        onChangeText={setBio}
+        value={bio}
+      />
+      <Text style={{ textAlign: 'right', color: '#888' }}>{bio.length} / {maxLength}</Text>
+
+      <TouchableOpacity
+        style={[styles.button, !bio && styles.disabled]}
+        onPress={() => onSubmit(bio)} // ✅ Submit now
+        disabled={!bio}
+      >
+        <Text style={styles.buttonText}>Finish Setup</Text>
+      </TouchableOpacity>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -252,4 +280,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     color: '#888',
   },
+  disabled: {
+    backgroundColor: '#ccc',
+  },  
 });

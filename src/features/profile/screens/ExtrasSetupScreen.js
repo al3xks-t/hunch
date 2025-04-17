@@ -4,10 +4,9 @@ import { auth, db } from '../../../config/firebase';
 import { doc, updateDoc } from 'firebase/firestore';
 import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../../../context/AuthContext';
-
+import PromptPickerScreen from './PromptPickerScreen';
 
 // Step components (to be created next)
-import Step_Bio from './extrasSteps/Step_Bio';
 import Step_Sexuality from './extrasSteps/Step_Sexuality.js';
 import Step_DatingIntentions from './extrasSteps/Step_DatingIntentions';
 import Step_Height from './extrasSteps/Step_Height';
@@ -15,7 +14,6 @@ import Step_Religion from './extrasSteps/Step_Religion';
 import Step_Politics from './extrasSteps/Step_Politics';
 import Step_SubstanceUsage from './extrasSteps/Step_SubstanceUsage';
 import Step_Interests from './extrasSteps/Step_Interests';
-import Step_Final from './extrasSteps/Step_Final';
 
 export default function ExtrasSetupScreen() {
   const [step, setStep] = useState(0);
@@ -29,10 +27,10 @@ export default function ExtrasSetupScreen() {
     setStep(prev => prev + 1);
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (prompts) => {
     try {
       const userRef = doc(db, 'users', auth.currentUser.uid);
-      await updateDoc(userRef, { extras });
+      await updateDoc(userRef, { extras: { ...extras, prompts } });
       await refreshProfile();
       console.log('✅ Extras saved to Firestore:', extras);
 
@@ -45,7 +43,6 @@ export default function ExtrasSetupScreen() {
   };
 
   const steps = [
-    <Step_Bio onNext={(val) => handleNext('bio', val)} />,
     <Step_Sexuality onNext={(val) => handleNext('sexuality', val)} />,
     <Step_DatingIntentions onNext={(val) => handleNext('intentions', val)} />,
     <Step_Height onNext={(val) => handleNext('height', val)} />,
@@ -53,7 +50,7 @@ export default function ExtrasSetupScreen() {
     <Step_Politics onNext={(val) => handleNext('politics', val)} />,
     <Step_SubstanceUsage onNext={(val) => handleNext('substances', val)} />,
     <Step_Interests onNext={(val) => handleNext('interests', val)} />,
-    <Step_Final onFinish={handleSubmit} />,
+    <PromptPickerScreen onSubmit={handleSubmit} />,
   ];
 
   return (

@@ -2,9 +2,13 @@ import { useAuth } from '../../../context/AuthContext';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { signOut } from 'firebase/auth';
 import { auth } from '../../../config/firebase';
+import { useNavigation } from '@react-navigation/native';
+
 
 export default function ViewProfileScreen() {
   const { profile } = useAuth();
+  const navigation = useNavigation();
+
 
   const handleLogout = () => {
     Alert.alert('Log Out', 'Are you sure you want to log out?', [
@@ -19,6 +23,18 @@ export default function ViewProfileScreen() {
     ]);
   };
 
+  const calculateAge = (dobString) => {
+    const dob = new Date(dobString);
+    const now = new Date();
+    let age = now.getFullYear() - dob.getFullYear();
+    const hasHadBirthdayThisYear =
+      now.getMonth() > dob.getMonth() ||
+      (now.getMonth() === dob.getMonth() && now.getDate() >= dob.getDate());
+    if (!hasHadBirthdayThisYear) age--;
+    return age;
+  };
+  
+
   const extras = profile?.extras || {};
 
   return (
@@ -30,14 +46,27 @@ export default function ViewProfileScreen() {
       <Text style={styles.label}>Pronouns:</Text>
       <Text style={styles.value}>{profile?.pronouns}</Text>
 
-      <Text style={styles.label}>Birthday:</Text>
-      <Text style={styles.value}>{profile?.dob ? new Date(profile.dob).toDateString() : '—'}</Text>
+      <Text style={styles.label}>Age:</Text>
+      <Text style={styles.value}>{profile?.dob ?`${calculateAge(profile.dob)} years old` : '—'}</Text>
 
       <Text style={styles.label}>Location:</Text>
       <Text style={styles.value}>{profile?.location}</Text>
 
       <Text style={styles.label}>Bio:</Text>
       <Text style={styles.value}>{profile?.bio || '—'}</Text>
+
+      {extras?.prompts && Object.keys(extras.prompts).length > 0 && (
+          <>
+            <Text style={styles.sectionTitle}>🗣️ Personality Prompts</Text>
+            {Object.entries(extras.prompts).map(([prompt, answer], index) => (
+              <View key={index} style={{ marginBottom: 12 }}>
+                <Text style={styles.label}>{prompt}</Text>
+                <Text style={styles.value}>{answer}</Text>
+              </View>
+            ))}
+          </>
+        )}
+
 
       <Text style={styles.sectionTitle}>✨ Extra Info</Text>
       <Text style={styles.label}>Sexuality:</Text>
@@ -70,12 +99,19 @@ export default function ViewProfileScreen() {
         {extras?.interests?.length ? extras.interests.join(', ') : '—'}
       </Text>
 
+      <TouchableOpacity style={styles.editButton} onPress={() => navigation.navigate('EditProfile')}>
+        <Text style={styles.editText}>Edit Profile</Text>
+        </TouchableOpacity>
+
+
       <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
         <Text style={styles.logoutText}>Log Out</Text>
       </TouchableOpacity>
     </ScrollView>
   );
 }
+
+
 
 const styles = StyleSheet.create({
   container: {
@@ -111,4 +147,16 @@ const styles = StyleSheet.create({
     color: 'white',
     fontWeight: 'bold',
   },
+  editButton: {
+    backgroundColor: '#e0e0e0',
+    padding: 12,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginTop: 30,
+  },
+  editText: {
+    color: '#333',
+    fontWeight: 'bold',
+  },
+  
 });
