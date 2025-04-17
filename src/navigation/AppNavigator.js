@@ -10,10 +10,11 @@ import { useAuth } from '../context/AuthContext';
 import LandingScreen from '../screens/LandingScreen';
 import LoginScreen from '../features/auth/screens/LoginScreen';
 import SignupScreen from '../features/auth/screens/SignupScreen';
-import HomeScreen from '../screens/HomeScreen';
+import HomeScreen from '../features/home/screens/HomeScreen';
 import ProfileSetupScreen from '../features/profile/screens/ProfileSetupScreen';
 import ExtrasIntroScreen from '../features/profile/screens/ExtrasIntroScreen';
 import ExtrasSetupScreen from '../features/profile/screens/ExtrasSetupScreen';
+import BottomTabNavigator from './BottomTabNavigator';
 
   
 
@@ -75,7 +76,7 @@ function AppStack() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }} initialRouteName="Router">
       <Stack.Screen name="Router" component={RouterScreen} />
-      <Stack.Screen name="Home" component={HomeScreen} />
+      <Stack.Screen name="Home" component={BottomTabNavigator} />
       <Stack.Screen name="ProfileSetup" component={ProfileSetupScreen} />
       <Stack.Screen name="ExtrasIntro" component={ExtrasIntroScreen} />
       <Stack.Screen name="OptionalExtras" component={ExtrasSetupScreen} />

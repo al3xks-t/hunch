@@ -86,9 +86,39 @@ function BirthdayStep({ onNext }) {
       <Picker selectedValue={day} onValueChange={setDay}>{days.map((d, i) => <Picker.Item label={d} value={d} key={i} />)}</Picker>
       <Text style={{ marginBottom: 8 }}>Year</Text>
       <Picker selectedValue={year} onValueChange={setYear}>{years.map((y, i) => <Picker.Item label={y} value={y} key={i} />)}</Picker>
-      <TouchableOpacity style={styles.button} onPress={() => onNext(`${month} ${day}, ${year}`)}>
-        <Text style={styles.buttonText}>Next</Text>
-      </TouchableOpacity>
+      <TouchableOpacity
+  style={styles.button}
+  onPress={() => {
+    const monthIndex = months.indexOf(month);
+    const safeYear = parseInt(year);
+    const safeDay = parseInt(day);
+
+    if (
+      isNaN(safeYear) ||
+      monthIndex === -1 ||
+      isNaN(safeDay) ||
+      safeDay < 1 ||
+      safeDay > 31
+    ) {
+      alert('Please select a valid date.');
+      return;
+    }
+
+    const safeDate = new Date(safeYear, monthIndex, safeDay);
+
+    // Final sanity check
+    if (isNaN(safeDate.getTime())) {
+      alert('Oops! Something went wrong with your date.');
+      return;
+    }
+
+    onNext(safeDate.toISOString());
+  }}
+>
+  <Text style={styles.buttonText}>Next</Text>
+</TouchableOpacity>
+
+
     </View>
   );
 }
@@ -155,7 +185,19 @@ function LocationStep({ onNext }) {
 function PhotoStep({ onNext }) {
   const [photo, setPhoto] = useState(null);
   const pickImage = async () => {
-    let result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaType.Images, allowsEditing: true, quality: 1 });
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      alert('Permission to access media library is required!');
+      return;
+    }
+  
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: [ImagePicker.MediaType.Image],
+      allowsEditing: true,
+      quality: 1,
+    });
+    
+  
     if (!result.canceled) {
       setPhoto(result.assets[0].uri);
     }

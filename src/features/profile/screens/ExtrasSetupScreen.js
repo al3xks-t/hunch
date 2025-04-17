@@ -3,6 +3,8 @@ import { View, Text, StyleSheet, InteractionManager } from 'react-native';
 import { auth, db } from '../../../config/firebase';
 import { doc, updateDoc } from 'firebase/firestore';
 import { useNavigation } from '@react-navigation/native';
+import { useAuth } from '../../../context/AuthContext';
+
 
 // Step components (to be created next)
 import Step_Bio from './extrasSteps/Step_Bio';
@@ -19,6 +21,8 @@ export default function ExtrasSetupScreen() {
   const [step, setStep] = useState(0);
   const [extras, setExtras] = useState({});
   const navigation = useNavigation();
+  const { refreshProfile } = useAuth();
+
 
   const handleNext = (field, value) => {
     setExtras(prev => ({ ...prev, [field]: value }));
@@ -29,6 +33,7 @@ export default function ExtrasSetupScreen() {
     try {
       const userRef = doc(db, 'users', auth.currentUser.uid);
       await updateDoc(userRef, { extras });
+      await refreshProfile();
       console.log('✅ Extras saved to Firestore:', extras);
 
       InteractionManager.runAfterInteractions(() => {
