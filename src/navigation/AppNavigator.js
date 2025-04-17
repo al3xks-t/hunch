@@ -13,8 +13,9 @@ import SignupScreen from '../features/auth/screens/SignupScreen';
 import HomeScreen from '../screens/HomeScreen';
 import ProfileSetupScreen from '../features/profile/screens/ProfileSetupScreen';
 import ExtrasIntroScreen from '../features/profile/screens/ExtrasIntroScreen';
-import OptionalExtrasScreen from '../features/profile/screens/OptionalExtrasScreen';
+import ExtrasSetupScreen from '../features/profile/screens/ExtrasSetupScreen';
 
+  
 
 const Stack = createNativeStackNavigator();
 
@@ -77,7 +78,7 @@ function AppStack() {
       <Stack.Screen name="Home" component={HomeScreen} />
       <Stack.Screen name="ProfileSetup" component={ProfileSetupScreen} />
       <Stack.Screen name="ExtrasIntro" component={ExtrasIntroScreen} />
-      <Stack.Screen name="OptionalExtras" component={OptionalExtrasScreen} />
+      <Stack.Screen name="OptionalExtras" component={ExtrasSetupScreen} />
     </Stack.Navigator>
   );
 }
