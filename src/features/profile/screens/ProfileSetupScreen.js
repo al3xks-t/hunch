@@ -7,6 +7,10 @@ import * as ImagePicker from 'expo-image-picker';
 import { CommonActions } from '@react-navigation/native';
 import { useAuth } from '../../../context/AuthContext';
 import { Picker } from '@react-native-picker/picker';
+import * as FileSystem from 'expo-file-system';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { storage } from '../../../config/firebase';
+
 
 export default function ProfileSetupScreen({ navigation }) {
   const [step, setStep] = useState(0);
@@ -30,8 +34,6 @@ export default function ProfileSetupScreen({ navigation }) {
       console.error('❌ Error saving profile:', e);
     }
   };
-  
-  
   
 
   const steps = [
@@ -184,6 +186,11 @@ function LocationStep({ onNext }) {
 
 function PhotoStep({ onNext }) {
   const [photo, setPhoto] = useState(null);
+  const uriToBlob = async (uri) => {
+    const response = await fetch(uri);
+    const blob = await response.blob();
+    return blob;
+  };
   const pickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
@@ -192,23 +199,46 @@ function PhotoStep({ onNext }) {
     }
   
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: [ImagePicker.MediaType.Image],
+      mediaTypes: 'Images',
       allowsEditing: true,
       quality: 1,
     });
-    
   
-    if (!result.canceled) {
-      setPhoto(result.assets[0].uri);
+    if (!result.canceled && result.assets?.length > 0) {
+      try {
+        const asset = result.assets[0];
+        const imageUri = asset.uri;
+        const blob = await uriToBlob(imageUri); // ✅ safely convert to blob
+    
+        const storageRef = ref(storage, `profilePhotos/${auth.currentUser.uid}.jpg`);
+        const uploadResult = await uploadBytes(storageRef, blob); // upload
+    
+        const downloadURL = await getDownloadURL(uploadResult.ref);
+        setPhoto(downloadURL);
+        onNext(downloadURL);
+      } catch (err) {
+        console.error('❌ Upload error (real device):', err);
+        alert('Upload failed on device — please try another photo.');
+      }
     }
   };
+  
+  
+  
 
   return (
     <View>
       <Text style={styles.label}>Upload a profile photo</Text>
-      <TouchableOpacity style={styles.input} onPress={pickImage}>
-        <Text>{photo ? 'Change photo' : 'Tap to select a photo'}</Text>
-      </TouchableOpacity>
+      <TouchableOpacity
+  style={styles.input}
+  onPress={() => {
+    console.log('🖼️ Photo picker button tapped');
+    pickImage();
+  }}
+>
+  <Text>{photo ? 'Change photo' : 'Tap to select a photo'}</Text>
+</TouchableOpacity>
+
       {photo && <Image source={{ uri: photo }} style={{ width: 100, height: 100, borderRadius: 10, marginVertical: 10 }} />}
       <TouchableOpacity style={styles.button} onPress={() => onNext(photo)}>
         <Text style={styles.buttonText}>Next</Text>
