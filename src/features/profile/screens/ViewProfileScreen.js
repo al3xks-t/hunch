@@ -1,8 +1,10 @@
 import { useAuth } from '../../../context/AuthContext';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { Image, View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { signOut } from 'firebase/auth';
 import { auth } from '../../../config/firebase';
 import { useNavigation } from '@react-navigation/native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
 
 
 export default function ViewProfileScreen() {
@@ -38,7 +40,21 @@ export default function ViewProfileScreen() {
   const extras = profile?.extras || {};
 
   return (
+    <SafeAreaView edges={['top']} style={{ flex: 1 }}>
     <ScrollView contentContainerStyle={styles.container}>
+
+        {profile?.photoURL ? (
+          <Image
+            source={{ uri: profile.photoURL }}
+            style={{ width: 120, height: 120, borderRadius: 60, alignSelf: 'center', marginBottom: 20 }}
+          />
+        ) : (
+          <View style={{ width: 120, height: 120, borderRadius: 60, backgroundColor: '#ccc', alignSelf: 'center', marginBottom: 20, justifyContent: 'center', alignItems: 'center' }}>
+            <Text style={{ color: '#fff' }}>No Photo</Text>
+          </View>
+        )}
+
+
       <Text style={styles.sectionTitle}>🧍 Basic Info</Text>
       <Text style={styles.label}>Name:</Text>
       <Text style={styles.value}>{profile?.name}</Text>
@@ -108,6 +124,7 @@ export default function ViewProfileScreen() {
         <Text style={styles.logoutText}>Log Out</Text>
       </TouchableOpacity>
     </ScrollView>
+    </SafeAreaView>
   );
 }
 

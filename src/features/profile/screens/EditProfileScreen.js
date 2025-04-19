@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView, Switch } from 'react-native';
+import { Image, View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView, Switch } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { auth, db } from '../../../config/firebase';
 import { useNavigation } from '@react-navigation/native';
 import PromptManager from '../components/PromptManager';
 import { useAuth } from '../../../context/AuthContext';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
 
 
 function SubstanceToggle({ initialValues, onChange }) {
@@ -60,6 +62,38 @@ export default function EditProfileScreen() {
     fetchProfile();
   }, []);
 
+  const handlePhotoUpdate = async () => {
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        alert('Permission to access media library is required!');
+        return;
+      }
+  
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: [ImagePicker.MediaType.Image],
+        allowsEditing: true,
+        quality: 1,
+      });
+  
+      if (!result.canceled && result.assets?.length > 0) {
+        const asset = result.assets[0];
+        const imageUri = asset.uri;
+        const blob = await (await fetch(imageUri)).blob();
+  
+        const storageRef = ref(storage, `profilePhotos/${auth.currentUser.uid}.jpg`);
+        await uploadBytes(storageRef, blob);
+  
+        const downloadURL = await getDownloadURL(storageRef);
+        setUpdated((prev) => ({ ...prev, photoURL: downloadURL }));
+      }
+    } catch (e) {
+      console.error('❌ Failed to update photo:', e);
+      alert('Failed to upload photo');
+    }
+  };
+  
+
   const handleSave = async () => {
     try {
       const ref = doc(db, 'users', auth.currentUser.uid);
@@ -95,8 +129,26 @@ export default function EditProfileScreen() {
   if (!profile) return <Text style={{ marginTop: 100, textAlign: 'center' }}>Loading...</Text>;
 
   return (
+    <SafeAreaView edges={['top']} style={{ flex: 1 }}>
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.header}>Edit Profile</Text>
+
+      <Text style={styles.label}>Profile Photo</Text>
+
+        <TouchableOpacity onPress={handlePhotoUpdate} style={{ alignItems: 'center' }}>
+          {updated.photoURL ? (
+            <Image
+              source={{ uri: updated.photoURL }}
+              style={{ width: 100, height: 100, borderRadius: 50, marginBottom: 8 }}
+            />
+          ) : (
+            <View style={{ width: 100, height: 100, borderRadius: 50, backgroundColor: '#ccc', marginBottom: 8, justifyContent: 'center', alignItems: 'center' }}>
+              <Text style={{ color: '#fff' }}>Add</Text>
+            </View>
+          )}
+          <Text style={{ color: '#ec4899', fontWeight: 'bold' }}>Change Photo</Text>
+        </TouchableOpacity>
+
 
       <Text style={styles.label}>Name</Text>
       <TextInput style={styles.input} value={updated.name} onChangeText={(text) => setUpdated(prev => ({ ...prev, name: text }))} />
@@ -280,6 +332,7 @@ export default function EditProfileScreen() {
         <Text style={styles.saveText}>Save Changes</Text>
       </TouchableOpacity>
     </ScrollView>
+    </SafeAreaView>
   );
 }
 

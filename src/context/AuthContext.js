@@ -46,7 +46,12 @@ export function AuthProvider({ children }) {
       user,
       profile,
       loading,
-      refreshProfile: () => fetchUserProfile(user?.uid)
+      refreshProfile: async () => {
+        if (user?.uid) {
+          return await fetchUserProfile(user.uid); // ✅ forward resolved profile
+        }
+        return null;
+      }      
     }}>
       {children}
     </AuthContext.Provider>

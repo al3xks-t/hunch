@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Image, ActivityIndicator, Dimensions } from 'react-native';
 import Swiper from 'react-native-deck-swiper';
-import { collection, getDocs, query, where } from 'firebase/firestore';
+import { collection, getDocs, query, where, onSnapshot, doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 import { db, auth } from '../../../config/firebase';
+import Toast from 'react-native-toast-message'; // optional
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
+
 
 export default function HomeScreen() {
   const [users, setUsers] = useState([]);
@@ -13,21 +15,23 @@ export default function HomeScreen() {
   const currentUid = auth.currentUser?.uid;
 
   useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        const q = query(collection(db, 'users'), where('__name__', '!=', currentUid));
-        const snapshot = await getDocs(q);
-        const fetched = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        setUsers(fetched);
-      } catch (e) {
-        console.error('Error fetching users:', e);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchUsers();
-  }, []);
+    if (!currentUid) return;
+  
+    const q = query(collection(db, 'users'), where('__name__', '!=', currentUid));
+  
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const fetched = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setUsers(fetched);
+      setLoading(false); // ✅ Stop loading once users are set
+    }, (error) => {
+      console.error('Error fetching users in real-time:', error);
+      setLoading(false); // ✅ Fail-safe
+    });
+  
+    return () => unsubscribe();
+  }, [currentUid]);
+  
+  
 
   if (loading) {
     return (
@@ -45,6 +49,45 @@ export default function HomeScreen() {
       </View>
     );
   }
+
+
+  const handleSwipeRight = async (likedUser) => {
+    try {
+      const currentUid = auth.currentUser.uid;
+      const likedUid = likedUser.id;
+  
+      // ✅ Write to 'sent' likes
+      const sentRef = doc(db, 'likes', currentUid, 'sent', likedUid);
+      await setDoc(sentRef, { likedAt: serverTimestamp() });
+  
+      // ✅ Write to 'received' likes (for likedUser)
+      const receivedRef = doc(db, 'likes', likedUid, 'received', currentUid);
+      await setDoc(receivedRef, { likedAt: serverTimestamp() });
+  
+      // ✅ Check for mutual interest
+      const reverseLike = doc(db, 'likes', likedUid, 'sent', currentUid);
+      const reverseSnap = await getDoc(reverseLike);
+  
+      if (reverseSnap.exists()) {
+        const matchId = [currentUid, likedUid].sort().join('_');
+        const matchRef = doc(db, 'matches', matchId);
+  
+        await setDoc(matchRef, {
+          users: [currentUid, likedUid],
+          createdAt: serverTimestamp(),
+          chatId: matchId,
+        });
+  
+        console.log('💘 MATCHED!');
+        Toast.show({ type: 'success', text1: '💖 It’s a match!' });
+      } else {
+        console.log('👍 Liked! Waiting for mutual like');
+      }
+    } catch (e) {
+      console.error('❌ Swipe error:', e);
+    }
+  };
+
 
   return (
     <View style={styles.container}>
@@ -67,6 +110,7 @@ export default function HomeScreen() {
         animateCardOpacity
         disableTopSwipe
         disableBottomSwipe
+        onSwipedRight={(cardIndex) => handleSwipeRight(users[cardIndex])}
       />
     </View>
   );

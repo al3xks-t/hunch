@@ -2,10 +2,11 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import HomeScreen from '../features/home/screens/HomeScreen';
 import ViewProfileScreen from '../features/profile/screens/ViewProfileScreen';
+import MatchesScreen from '../features/matches/screens/MatchesScreen';
+import LikesScreen  from '../features/likes/screens/LikesScreen';
+
 
 // Placeholder screens
-const MatchesScreen = () => <></>;
-const MessagesScreen = () => <></>;
 
 const Tab = createBottomTabNavigator();
 
@@ -23,10 +24,10 @@ export default function BottomTabNavigator() {
             case 'Home':
               icon = 'home';
               break;
-            case 'Matches':
+            case 'Likes':
               icon = 'heart';
               break;
-            case 'Messages':
+            case 'Matches':
               icon = 'chatbubbles';
               break;
             case 'Profile':
@@ -39,8 +40,8 @@ export default function BottomTabNavigator() {
       })}
     >
       <Tab.Screen name="Home" component={HomeScreen} />
+      <Tab.Screen name="Likes" component={LikesScreen} />
       <Tab.Screen name="Matches" component={MatchesScreen} />
-      <Tab.Screen name="Messages" component={MessagesScreen} />
       <Tab.Screen name="Profile" component={ViewProfileScreen} />
     </Tab.Navigator>
   );

@@ -16,6 +16,9 @@ import ExtrasIntroScreen from '../features/profile/screens/ExtrasIntroScreen';
 import ExtrasSetupScreen from '../features/profile/screens/ExtrasSetupScreen';
 import BottomTabNavigator from './BottomTabNavigator';
 import EditProfileScreen from '../features/profile/screens/EditProfileScreen';
+import ChatScreen from '../features/chat/screens/ChatScreen';
+
+
 
 
 
@@ -84,6 +87,7 @@ function AppStack() {
       <Stack.Screen name="ExtrasIntro" component={ExtrasIntroScreen} />
       <Stack.Screen name="OptionalExtras" component={ExtrasSetupScreen} />
       <Stack.Screen name="EditProfile" component={EditProfileScreen} />
+      <Stack.Screen name="Chat" component={ChatScreen} />
     </Stack.Navigator>
   );
 }
