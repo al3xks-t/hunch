@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Image, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { collection, query, getDocs, doc, deleteDoc, setDoc, serverTimestamp, getDoc } from 'firebase/firestore';
 import { db, auth } from '../../../config/firebase';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 
 export default function LikesScreen() {

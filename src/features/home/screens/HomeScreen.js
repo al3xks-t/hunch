@@ -9,27 +9,71 @@ const SCREEN_WIDTH = Dimensions.get('window').width;
 
 
 export default function HomeScreen() {
+    const [interactedIds, setInteractedIds] = useState(new Set());
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+  
 
   const currentUid = auth.currentUser?.uid;
 
   useEffect(() => {
     if (!currentUid) return;
   
-    const q = query(collection(db, 'users'), where('__name__', '!=', currentUid));
+    const unsubLikes = onSnapshot(
+      collection(db, 'likes', currentUid, 'liked'),
+      (likeSnap) => {
+        const likedIds = likeSnap.docs.map(doc => doc.id);
   
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const fetched = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setUsers(fetched);
-      setLoading(false); // ✅ Stop loading once users are set
-    }, (error) => {
-      console.error('Error fetching users in real-time:', error);
-      setLoading(false); // ✅ Fail-safe
-    });
+        const unsubMatches = onSnapshot(
+          query(collection(db, 'matches'), where('users', 'array-contains', currentUid)),
+          (matchSnap) => {
+            const matchedIds = matchSnap.docs.map(doc => {
+              const users = doc.data().users;
+              return users.find(uid => uid !== currentUid);
+            });
   
-    return () => unsubscribe();
+            const excludedIds = new Set([...likedIds, ...matchedIds]);
+  
+            // Fetch users in real time
+            const unsubUsers = onSnapshot(
+              query(collection(db, 'users'), where('__name__', '!=', currentUid)),
+              (userSnap) => {
+                const visible = userSnap.docs
+                  .map(doc => ({ id: doc.id, ...doc.data() }))
+                  .filter(user => !excludedIds.has(user.id));
+  
+                setUsers(visible);
+                setLoading(false);
+              },
+              (err) => {
+                console.error('❌ User fetch error:', err);
+                setLoading(false);
+              }
+            );
+  
+            // Cleanup user snapshot when match changes
+            return unsubUsers;
+          },
+          (err) => {
+            console.error('❌ Match listener failed:', err);
+          }
+        );
+  
+        // Cleanup match snapshot when likes change
+        return unsubMatches;
+      },
+      (err) => {
+        console.error('❌ Like listener failed:', err);
+      }
+    );
+  
+    // Cleanup all listeners
+    return () => {
+      unsubLikes();
+    };
   }, [currentUid]);
+  
+  
   
   
 

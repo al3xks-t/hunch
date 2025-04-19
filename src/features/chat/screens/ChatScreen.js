@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, FlatList, KeyboardAvoidingView, Platform } from 'react-native';
-import { collection, addDoc, query, orderBy, onSnapshot, serverTimestamp } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot, serverTimestamp, doc, addDoc, updateDoc } from 'firebase/firestore';
 import { db, auth } from '../../../config/firebase';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -16,14 +16,25 @@ export default function ChatScreen({ route }) {
   useEffect(() => {
     const messagesRef = collection(db, 'chats', chatId, 'messages');
     const q = query(messagesRef, orderBy('timestamp', 'asc'));
-
+  
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const fetched = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setMessages(fetched);
+  
+      // ✅ Mark all messages not from current user as seen
+      snapshot.docs.forEach((docSnap) => {
+        const msg = docSnap.data();
+        if (msg.sender !== auth.currentUser.uid && !msg.seen) {
+          updateDoc(doc(db, 'chats', chatId, 'messages', docSnap.id), {
+            seen: true,
+          });
+        }
+      });
     });
-
+  
     return () => unsubscribe();
   }, [chatId]);
+  
 
   const sendMessage = async () => {
     if (!input.trim()) return;
